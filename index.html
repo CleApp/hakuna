@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClipTok - Short Video Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* Video player styling */
+        .video-container {
+            position: relative;
+            padding-bottom: 177.78%; /* 9:16 aspect ratio */
+            height: 0;
+            overflow: hidden;
+        }
+        .video-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* Animation for like button */
+        @keyframes likeAnimation {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        .liked {
+            animation: likeAnimation 0.5s ease;
+            color: #FF0050;
+        }
+        
+        /* Progress bar for video loading */
+        .progress-bar {
+            height: 2px;
+            background-color: rgba(255, 255, 255, 0.3);
+            position: relative;
+        }
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0;
+            background-color: #FF0050;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-black text-white font-sans">
+    <!-- Main App Container -->
+    <div class="flex flex-col h-screen max-h-screen overflow-hidden">
+        <!-- Header -->
+        <header class="flex justify-between items-center p-4 border-b border-gray-800">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-camera text-pink-500 text-xl"></i>
+                <h1 class="text-xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">ClipTok</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="p-2 rounded-full hover:bg-gray-800">
+                    <i class="fas fa-search"></i>
+                </button>
+                <button class="p-2 rounded-full hover:bg-gray-800">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </header>
+        
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto relative">
+            <!-- Video Feed -->
+            <div class="video-feed">
+                <!-- Video 1 -->
+                <div class="video-item relative h-screen">
+                    <div class="video-container">
+                        <video id="video1" loop>
+                            <source src="https://assets.mixkit.co/videos/preview/mixkit-woman-dancing-under-neon-lights-1230-large.mp4" type="video/mp4">
+                        </video>
+                    </div>
+                    
+                    <!-- Video Info Overlay -->
+                    <div class="absolute bottom-20 left-4 right-4">
+                        <div class="mb-4">
+                            <h3 class="font-bold text-lg">@dancequeen</h3>
+                            <p class="text-sm">Friday night vibes! 💃✨ #dance #nightout</p>
+                        </div>
+                        
+                        <!-- Sound Info -->
+                        <div class="flex items-center mb-6">
+                            <div class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center mr-2">
+                                <i class="fas fa-music text-xs"></i>
+                            </div>
+                            <span class="text-sm">Original Sound - DJ Groove</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Side Action Buttons -->
+                    <div class="absolute right-4 bottom-32 flex flex-col items-center space-y-6">
+                        <!-- Profile -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-12 h-12 rounded-full border-2 border-pink-500 overflow-hidden">
+                                <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Profile" class="w-full h-full object-cover">
+                            </div>
+                            <div class="mt-2 w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center">
+                                <i class="fas fa-plus text-xs"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Like Button -->
+                        <div class="flex flex-col items-center">
+                            <button id="likeBtn1" class="p-2 rounded-full hover:bg-gray-800">
+                                <i class="far fa-heart text-2xl"></i>
+                            </button>
+                            <span id="likeCount1" class="text-xs">24.5K</span>
+                        </div>
+                        
+                        <!-- Comment Button -->
+                        <div class="flex flex-col items-center">
+                            <button class="p-2 rounded-full hover:bg-gray-800">
+                                <i class="far fa-comment text-2xl"></i>
+                            </button>
+                            <span class="text-xs">1.2K</span>
+                        </div>
+                        
+                        <!-- Share Button -->
+                        <div class="flex flex-col items-center">
+                            <button class="p-2 rounded-full hover:bg-gray-800">
+                                <i class="fas fa-share text-2xl"></i>
+                            </button>
+                            <span class="text-xs">Share</span>
+                        </div>
+                        
+                        <!-- Music Disc -->
+                        <div class="w-10 h-10 rounded-full border border-gray-500 flex items-center justify-center animate-spin" style="animation-duration: 5s;">
+                            <div class="w-4 h-4 rounded-full bg-gray-500"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="progress-bar absolute bottom-16 left-0 right-0"></div>
+                </div>
+                
+                <!-- Video 2 -->
+                <div class="video-item relative h-screen">
+                    <div class="video-container">
+                        <video id="video2" loop>
+                            <source src="https://assets.mixkit.co/videos/preview/mixkit-man-doing-tricks-with-a-skateboard-in-a-parking-lot-34553-large.mp4" type="video/mp4">
+                        </video>
+                    </div>
+                    
+                    <!-- Video Info Overlay -->
+                    <div class="absolute bottom-20 left-4 right-4">
+                        <div class="mb-4">
+                            <h3 class="font-bold text-lg">@skateordie</h3>
+                            <p class="text-sm">New trick unlocked! 🛹 #skateboarding #tricks</p>
+                        </div>
+                        
+                        <!-- Sound Info -->
+                        <div class="flex items-center mb-6">
+                            <div class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center mr-2">
+                                <i class="fas fa-music text-xs"></i>
+                            </div>
+                            <span class="text-sm">Original Sound - Punk Rockers</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Side Action Buttons -->
+                    <div class="absolute right-4 bottom-32 flex flex-col items-center space-y-6">
+                        <!-- Profile -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-12 h-12 rounded-full border-2 border-pink-500 overflow-hidden">
+                                <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Profile" class="w-full h-full object-cover">
+                            </div>
+                            <div class="mt-2 w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center">
+                                <i class="fas fa-plus text-xs"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Like Button -->
+                        <div class="flex flex-col items-center">
+                            <button id="likeBtn2" class="p-2 rounded-full hover:bg-gray-800">
+                                <i class="far fa-heart text-2xl"></i>
+                            </button>
+                            <span id="likeCount2" class="text-xs">18.3K</span>
+                        </div>
+                        
+                        <!-- Comment Button -->
+                        <div class="flex flex-col items-center">
+                            <button class="p-2 rounded-full hover:bg-gray-800">
+                                <i class="far fa-comment text-2xl"></i>
+                            </button>
+                            <span class="text-xs">856</span>
+                        </div>
+                        
+                        <!-- Share Button -->
+                        <div class="flex flex-col items-center">
+                            <button class="p-2 rounded-full hover:bg-gray-800">
+                                <i class="fas fa-share text-2xl"></i>
+                            </button>
+                            <span class="text-xs">Share</span>
+                        </div>
+                        
+                        <!-- Music Disc -->
+                        <div class="w-10 h-10 rounded-full border border-gray-500 flex items-center justify-center animate-spin" style="animation-duration: 5s;">
+                            <div class="w-4 h-4 rounded-full bg-gray-500"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="progress-bar absolute bottom-16 left-0 right-0"></div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Bottom Navigation -->
+        <nav class="flex justify-around items-center p-3 border-t border-gray-800">
+            <button class="p-2 rounded-full hover:bg-gray-800">
+                <i class="fas fa-home text-xl"></i>
+            </button>
+            <button class="p-2 rounded-full hover:bg-gray-800">
+                <i class="fas fa-compass text-xl"></i>
+            </button>
+            <button class="p-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-600">
+                <i class="fas fa-plus text-xl"></i>
+            </button>
+            <button class="p-2 rounded-full hover:bg-gray-800">
+                <i class="fas fa-inbox text-xl"></i>
+            </button>
+            <button class="p-2 rounded-full hover:bg-gray-800">
+                <img src="https://randomuser.me/api/portraits/women/12.jpg" alt="Profile" class="w-6 h-6 rounded-full">
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        // Video player controls
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize videos
+            const videos = document.querySelectorAll('video');
+            
+            // Play first video automatically
+            videos[0].play();
+            
+            // Intersection Observer for lazy loading videos
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.play();
+                        // Update progress bar
+                        entry.target.addEventListener('timeupdate', function() {
+                            const progress = (this.currentTime / this.duration) * 100;
+                            const progressBar = entry.target.closest('.video-item').querySelector('.progress-bar');
+                            progressBar.style.setProperty('--width', `${progress}%`);
+                        });
+                    } else {
+                        entry.target.pause();
+                    }
+                });
+            }, { threshold: 0.7 });
+            
+            videos.forEach(video => observer.observe(video));
+            
+            // Like button functionality
+            document.getElementById('likeBtn1').addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                icon.classList.toggle('far');
+                icon.classList.toggle('fas');
+                icon.classList.toggle('liked');
+                
+                const countElement = document.getElementById('likeCount1');
+                let count = parseInt(countElement.textContent.replace('.', '').replace('K', '00'));
+                if (icon.classList.contains('fas')) {
+                    count += 100;
+                } else {
+                    count -= 100;
+                }
+                countElement.textContent = (count / 1000).toFixed(1) + 'K';
+            });
+            
+            document.getElementById('likeBtn2').addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                icon.classList.toggle('far');
+                icon.classList.toggle('fas');
+                icon.classList.toggle('liked');
+                
+                const countElement = document.getElementById('likeCount2');
+                let count = parseInt(countElement.textContent.replace('.', '').replace('K', '00'));
+                if (icon.classList.contains('fas')) {
+                    count += 100;
+                } else {
+                    count -= 100;
+                }
+                countElement.textContent = (count / 1000).toFixed(1) + 'K';
+            });
+            
+            // Simulate progress bar loading
+            document.querySelectorAll('.progress-bar').forEach(bar => {
+                bar.style.setProperty('--width', '0%');
+                setTimeout(() => {
+                    bar.style.setProperty('--width', '100%');
+                }, 100);
+            });
+            
+            // Swipe detection for mobile (simplified)
+            let startY;
+            document.addEventListener('touchstart', (e) => {
+                startY = e.touches[0].clientY;
+            }, false);
+            
+            document.addEventListener('touchend', (e) => {
+                const endY = e.changedTouches[0].clientY;
+                const diff = startY - endY;
+                
+                if (Math.abs(diff) > 50) { // Minimum swipe distance
+                    if (diff > 0) {
+                        // Swiped up
+                        window.scrollBy(0, window.innerHeight);
+                    } else {
+                        // Swiped down
+                        window.scrollBy(0, -window.innerHeight);
+                    }
+                }
+            }, false);
+        });
+    </script>
+</body>
+</html>
