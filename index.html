@@ -3,32 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClipTok - Short Video Platform</title>
+    <title>ClipTok - TikTok Clone</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Custom scrollbar */
+        /* Custom styles */
         ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #555;
+            display: none;
         }
         
-        /* Video player styling */
         .video-container {
             position: relative;
             padding-bottom: 177.78%; /* 9:16 aspect ratio */
             height: 0;
             overflow: hidden;
         }
+        
         .video-container video {
             position: absolute;
             top: 0;
@@ -38,40 +28,151 @@
             object-fit: cover;
         }
         
-        /* Animation for like button */
         @keyframes likeAnimation {
             0% { transform: scale(1); }
             50% { transform: scale(1.3); }
             100% { transform: scale(1); }
         }
+        
         .liked {
             animation: likeAnimation 0.5s ease;
             color: #FF0050;
         }
         
-        /* Progress bar for video loading */
         .progress-bar {
             height: 2px;
             background-color: rgba(255, 255, 255, 0.3);
             position: relative;
         }
+        
         .progress-bar::after {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             height: 100%;
-            width: 0;
+            width: var(--width, 0);
             background-color: #FF0050;
-            transition: width 0.3s ease;
+            transition: width 0.1s linear;
+        }
+        
+        .comment-section {
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .comment-section.open {
+            transform: translateY(0);
+        }
+        
+        .video-feed {
+            scroll-snap-type: y mandatory;
+            overflow-y: scroll;
+            height: calc(100vh - 60px);
+        }
+        
+        .video-item {
+            scroll-snap-align: start;
+            height: calc(100vh - 60px);
+        }
+        
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.7);
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            pointer-events: none;
+        }
+        
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: #262626;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            padding: 20px;
+            animation: modalFadeIn 0.3s ease;
+        }
+        
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Upload preview */
+        .upload-preview {
+            width: 100%;
+            height: 300px;
+            background-color: #333;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 15px;
+        }
+        
+        .upload-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .upload-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 50px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Tab system */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .tab-button {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab-button.active {
+            border-bottom-color: #FF0050;
+            color: #FF0050;
         }
     </style>
 </head>
-<body class="bg-black text-white font-sans">
+<body class="bg-black text-white font-sans overflow-hidden">
     <!-- Main App Container -->
-    <div class="flex flex-col h-screen max-h-screen overflow-hidden">
+    <div class="flex flex-col h-screen max-h-screen">
         <!-- Header -->
-        <header class="flex justify-between items-center p-4 border-b border-gray-800">
+        <header class="flex justify-between items-center p-4 border-b border-gray-800 sticky top-0 z-10 bg-black bg-opacity-70 backdrop-blur-sm">
             <div class="flex items-center space-x-2">
                 <i class="fas fa-camera text-pink-500 text-xl"></i>
                 <h1 class="text-xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">ClipTok</h1>
@@ -87,260 +188,780 @@
         </header>
         
         <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto relative">
+        <main class="flex-1 relative">
             <!-- Video Feed -->
-            <div class="video-feed">
-                <!-- Video 1 -->
-                <div class="video-item relative h-screen">
-                    <div class="video-container">
-                        <video id="video1" loop>
-                            <source src="https://assets.mixkit.co/videos/preview/mixkit-woman-dancing-under-neon-lights-1230-large.mp4" type="video/mp4">
-                        </video>
-                    </div>
-                    
-                    <!-- Video Info Overlay -->
-                    <div class="absolute bottom-20 left-4 right-4">
-                        <div class="mb-4">
-                            <h3 class="font-bold text-lg">@dancequeen</h3>
-                            <p class="text-sm">Friday night vibes! 💃✨ #dance #nightout</p>
-                        </div>
-                        
-                        <!-- Sound Info -->
-                        <div class="flex items-center mb-6">
-                            <div class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center mr-2">
-                                <i class="fas fa-music text-xs"></i>
-                            </div>
-                            <span class="text-sm">Original Sound - DJ Groove</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Right Side Action Buttons -->
-                    <div class="absolute right-4 bottom-32 flex flex-col items-center space-y-6">
-                        <!-- Profile -->
-                        <div class="flex flex-col items-center">
-                            <div class="w-12 h-12 rounded-full border-2 border-pink-500 overflow-hidden">
-                                <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Profile" class="w-full h-full object-cover">
-                            </div>
-                            <div class="mt-2 w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center">
-                                <i class="fas fa-plus text-xs"></i>
-                            </div>
-                        </div>
-                        
-                        <!-- Like Button -->
-                        <div class="flex flex-col items-center">
-                            <button id="likeBtn1" class="p-2 rounded-full hover:bg-gray-800">
-                                <i class="far fa-heart text-2xl"></i>
-                            </button>
-                            <span id="likeCount1" class="text-xs">24.5K</span>
-                        </div>
-                        
-                        <!-- Comment Button -->
-                        <div class="flex flex-col items-center">
-                            <button class="p-2 rounded-full hover:bg-gray-800">
-                                <i class="far fa-comment text-2xl"></i>
-                            </button>
-                            <span class="text-xs">1.2K</span>
-                        </div>
-                        
-                        <!-- Share Button -->
-                        <div class="flex flex-col items-center">
-                            <button class="p-2 rounded-full hover:bg-gray-800">
-                                <i class="fas fa-share text-2xl"></i>
-                            </button>
-                            <span class="text-xs">Share</span>
-                        </div>
-                        
-                        <!-- Music Disc -->
-                        <div class="w-10 h-10 rounded-full border border-gray-500 flex items-center justify-center animate-spin" style="animation-duration: 5s;">
-                            <div class="w-4 h-4 rounded-full bg-gray-500"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- Progress Bar -->
-                    <div class="progress-bar absolute bottom-16 left-0 right-0"></div>
-                </div>
-                
-                <!-- Video 2 -->
-                <div class="video-item relative h-screen">
-                    <div class="video-container">
-                        <video id="video2" loop>
-                            <source src="https://assets.mixkit.co/videos/preview/mixkit-man-doing-tricks-with-a-skateboard-in-a-parking-lot-34553-large.mp4" type="video/mp4">
-                        </video>
-                    </div>
-                    
-                    <!-- Video Info Overlay -->
-                    <div class="absolute bottom-20 left-4 right-4">
-                        <div class="mb-4">
-                            <h3 class="font-bold text-lg">@skateordie</h3>
-                            <p class="text-sm">New trick unlocked! 🛹 #skateboarding #tricks</p>
-                        </div>
-                        
-                        <!-- Sound Info -->
-                        <div class="flex items-center mb-6">
-                            <div class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center mr-2">
-                                <i class="fas fa-music text-xs"></i>
-                            </div>
-                            <span class="text-sm">Original Sound - Punk Rockers</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Right Side Action Buttons -->
-                    <div class="absolute right-4 bottom-32 flex flex-col items-center space-y-6">
-                        <!-- Profile -->
-                        <div class="flex flex-col items-center">
-                            <div class="w-12 h-12 rounded-full border-2 border-pink-500 overflow-hidden">
-                                <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Profile" class="w-full h-full object-cover">
-                            </div>
-                            <div class="mt-2 w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center">
-                                <i class="fas fa-plus text-xs"></i>
-                            </div>
-                        </div>
-                        
-                        <!-- Like Button -->
-                        <div class="flex flex-col items-center">
-                            <button id="likeBtn2" class="p-2 rounded-full hover:bg-gray-800">
-                                <i class="far fa-heart text-2xl"></i>
-                            </button>
-                            <span id="likeCount2" class="text-xs">18.3K</span>
-                        </div>
-                        
-                        <!-- Comment Button -->
-                        <div class="flex flex-col items-center">
-                            <button class="p-2 rounded-full hover:bg-gray-800">
-                                <i class="far fa-comment text-2xl"></i>
-                            </button>
-                            <span class="text-xs">856</span>
-                        </div>
-                        
-                        <!-- Share Button -->
-                        <div class="flex flex-col items-center">
-                            <button class="p-2 rounded-full hover:bg-gray-800">
-                                <i class="fas fa-share text-2xl"></i>
-                            </button>
-                            <span class="text-xs">Share</span>
-                        </div>
-                        
-                        <!-- Music Disc -->
-                        <div class="w-10 h-10 rounded-full border border-gray-500 flex items-center justify-center animate-spin" style="animation-duration: 5s;">
-                            <div class="w-4 h-4 rounded-full bg-gray-500"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- Progress Bar -->
-                    <div class="progress-bar absolute bottom-16 left-0 right-0"></div>
-                </div>
+            <div class="video-feed" id="videoFeed">
+                <!-- Videos will be loaded here dynamically -->
+            </div>
+            
+            <!-- Empty state when no videos -->
+            <div id="emptyState" class="flex flex-col items-center justify-center h-full text-center p-8">
+                <i class="fas fa-video text-4xl text-gray-600 mb-4"></i>
+                <h2 class="text-xl font-bold mb-2">No Videos Yet</h2>
+                <p class="text-gray-400 mb-6">Upload your first video to get started!</p>
+                <button id="uploadBtn" class="bg-gradient-to-r from-pink-500 to-purple-600 px-6 py-2 rounded-full font-semibold">
+                    Upload Video
+                </button>
             </div>
         </main>
         
         <!-- Bottom Navigation -->
-        <nav class="flex justify-around items-center p-3 border-t border-gray-800">
+        <nav class="flex justify-around items-center p-3 border-t border-gray-800 sticky bottom-0 z-10 bg-black">
             <button class="p-2 rounded-full hover:bg-gray-800">
                 <i class="fas fa-home text-xl"></i>
             </button>
             <button class="p-2 rounded-full hover:bg-gray-800">
                 <i class="fas fa-compass text-xl"></i>
             </button>
-            <button class="p-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-600">
+            <button id="createBtn" class="p-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-600">
                 <i class="fas fa-plus text-xl"></i>
             </button>
             <button class="p-2 rounded-full hover:bg-gray-800">
                 <i class="fas fa-inbox text-xl"></i>
             </button>
-            <button class="p-2 rounded-full hover:bg-gray-800">
+            <button id="profileBtn" class="p-2 rounded-full hover:bg-gray-800">
                 <img src="https://randomuser.me/api/portraits/women/12.jpg" alt="Profile" class="w-6 h-6 rounded-full">
             </button>
         </nav>
     </div>
 
+    <!-- Auth Modal -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <div class="flex mb-6">
+                <button class="tab-button active" data-tab="login">Login</button>
+                <button class="tab-button" data-tab="signup">Sign Up</button>
+            </div>
+            
+            <div id="login" class="tab-content active">
+                <h2 class="text-xl font-bold mb-6 text-center">Welcome Back</h2>
+                <form id="loginForm">
+                    <div class="mb-4">
+                        <input type="text" id="loginUsername" placeholder="Username or Email" class="w-full bg-gray-800 rounded-lg px-4 py-3 focus:outline-none">
+                    </div>
+                    <div class="mb-6">
+                        <input type="password" id="loginPassword" placeholder="Password" class="w-full bg-gray-800 rounded-lg px-4 py-3 focus:outline-none">
+                    </div>
+                    <button type="submit" class="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-3 rounded-lg font-semibold mb-4">
+                        Log In
+                    </button>
+                    <p class="text-center text-sm text-gray-400">Don't have an account? <button type="button" class="text-pink-500 font-medium switch-tab" data-tab="signup">Sign up</button></p>
+                </form>
+            </div>
+            
+            <div id="signup" class="tab-content">
+                <h2 class="text-xl font-bold mb-6 text-center">Create Account</h2>
+                <form id="signupForm">
+                    <div class="mb-4">
+                        <input type="text" id="signupUsername" placeholder="Username" class="w-full bg-gray-800 rounded-lg px-4 py-3 focus:outline-none">
+                    </div>
+                    <div class="mb-4">
+                        <input type="email" id="signupEmail" placeholder="Email" class="w-full bg-gray-800 rounded-lg px-4 py-3 focus:outline-none">
+                    </div>
+                    <div class="mb-6">
+                        <input type="password" id="signupPassword" placeholder="Password" class="w-full bg-gray-800 rounded-lg px-4 py-3 focus:outline-none">
+                    </div>
+                    <button type="submit" class="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-3 rounded-lg font-semibold mb-4">
+                        Sign Up
+                    </button>
+                    <p class="text-center text-sm text-gray-400">Already have an account? <button type="button" class="text-pink-500 font-medium switch-tab" data-tab="login">Log in</button></p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">Upload Video</h2>
+                <button class="close-modal p-2 rounded-full hover:bg-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="uploadForm">
+                <div class="upload-preview mb-4" id="videoPreview">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <video id="previewVideo" style="display: none;"></video>
+                </div>
+                
+                <input type="file" id="videoInput" accept="video/*" class="hidden">
+                
+                <button type="button" id="selectVideoBtn" class="w-full bg-gray-800 py-3 rounded-lg font-semibold mb-4">
+                    Select Video
+                </button>
+                
+                <div class="mb-4">
+                    <input type="text" id="videoCaption" placeholder="Add a caption..." class="w-full bg-gray-800 rounded-lg px-4 py-3 focus:outline-none">
+                </div>
+                
+                <div class="mb-4">
+                    <input type="text" id="videoHashtags" placeholder="Add hashtags (e.g. #fun #viral)" class="w-full bg-gray-800 rounded-lg px-4 py-3 focus:outline-none">
+                </div>
+                
+                <button type="submit" id="uploadSubmitBtn" class="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-3 rounded-lg font-semibold" disabled>
+                    Upload
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">My Profile</h2>
+                <button class="close-modal p-2 rounded-full hover:bg-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="flex flex-col items-center mb-6">
+                <img src="https://randomuser.me/api/portraits/women/12.jpg" alt="Profile" class="w-20 h-20 rounded-full border-2 border-pink-500 mb-3">
+                <h3 class="text-lg font-bold" id="profileUsername">username</h3>
+                <p class="text-gray-400 text-sm" id="profileEmail">user@example.com</p>
+            </div>
+            
+            <div class="flex justify-around mb-6">
+                <div class="text-center">
+                    <div class="font-bold">24</div>
+                    <div class="text-gray-400 text-sm">Following</div>
+                </div>
+                <div class="text-center">
+                    <div class="font-bold">1.2K</div>
+                    <div class="text-gray-400 text-sm">Followers</div>
+                </div>
+                <div class="text-center">
+                    <div class="font-bold">5</div>
+                    <div class="text-gray-400 text-sm">Videos</div>
+                </div>
+            </div>
+            
+            <div class="space-y-2">
+                <button class="w-full bg-gray-800 py-3 rounded-lg font-semibold">
+                    Edit Profile
+                </button>
+                <button id="logoutBtn" class="w-full bg-gray-800 py-3 rounded-lg font-semibold text-pink-500">
+                    Log Out
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Video player controls
+        // Sample video data
+        const sampleVideos = [
+            {
+                id: 1,
+                username: "@dancequeen",
+                caption: "Friday night vibes! 💃✨ #dance #nightout",
+                videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-woman-dancing-under-neon-lights-1230-large.mp4",
+                likes: "24.5K",
+                comments: "1.2K",
+                profilePic: "https://randomuser.me/api/portraits/women/44.jpg",
+                sound: "Original Sound - DJ Groove"
+            },
+            {
+                id: 2,
+                username: "@skateordie",
+                caption: "New trick unlocked! 🛹 #skateboarding #tricks",
+                videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-man-doing-tricks-with-a-skateboard-in-a-parking-lot-34553-large.mp4",
+                likes: "18.3K",
+                comments: "856",
+                profilePic: "https://randomuser.me/api/portraits/men/32.jpg",
+                sound: "Original Sound - Punk Rockers"
+            },
+            {
+                id: 3,
+                username: "@cheflife",
+                caption: "Perfect pasta in 5 minutes! 🍝 #cooking #food",
+                videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-cooking-pasta-in-a-pan-1564-large.mp4",
+                likes: "32.1K",
+                comments: "2.4K",
+                profilePic: "https://randomuser.me/api/portraits/women/22.jpg",
+                sound: "Original Sound - Italian Kitchen"
+            }
+        ];
+
+        // User data
+        let currentUser = null;
+        let userVideos = [];
+
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize videos
-            const videos = document.querySelectorAll('video');
+            // DOM elements
+            const videoFeed = document.getElementById('videoFeed');
+            const emptyState = document.getElementById('emptyState');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const createBtn = document.getElementById('createBtn');
+            const profileBtn = document.getElementById('profileBtn');
             
-            // Play first video automatically
-            videos[0].play();
+            // Modal elements
+            const authModal = document.getElementById('authModal');
+            const uploadModal = document.getElementById('uploadModal');
+            const profileModal = document.getElementById('profileModal');
             
-            // Intersection Observer for lazy loading videos
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.play();
-                        // Update progress bar
-                        entry.target.addEventListener('timeupdate', function() {
-                            const progress = (this.currentTime / this.duration) * 100;
-                            const progressBar = entry.target.closest('.video-item').querySelector('.progress-bar');
-                            progressBar.style.setProperty('--width', `${progress}%`);
-                        });
+            // Close modal buttons
+            const closeModalButtons = document.querySelectorAll('.close-modal');
+            
+            // Tab system
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const switchTabButtons = document.querySelectorAll('.switch-tab');
+            
+            // Auth forms
+            const loginForm = document.getElementById('loginForm');
+            const signupForm = document.getElementById('signupForm');
+            
+            // Upload form
+            const uploadForm = document.getElementById('uploadForm');
+            const videoInput = document.getElementById('videoInput');
+            const selectVideoBtn = document.getElementById('selectVideoBtn');
+            const videoPreview = document.getElementById('videoPreview');
+            const previewVideo = document.getElementById('previewVideo');
+            const uploadSubmitBtn = document.getElementById('uploadSubmitBtn');
+            
+            // Profile elements
+            const logoutBtn = document.getElementById('logoutBtn');
+            const profileUsername = document.getElementById('profileUsername');
+            const profileEmail = document.getElementById('profileEmail');
+            
+            // Check if user is logged in
+            checkAuthStatus();
+            
+            // Load videos
+            loadVideos();
+            
+            // Event listeners for modals
+            uploadBtn.addEventListener('click', () => {
+                if (!currentUser) {
+                    showAuthModal();
+                } else {
+                    showUploadModal();
+                }
+            });
+            
+            createBtn.addEventListener('click', () => {
+                if (!currentUser) {
+                    showAuthModal();
+                } else {
+                    showUploadModal();
+                }
+            });
+            
+            profileBtn.addEventListener('click', () => {
+                if (!currentUser) {
+                    showAuthModal();
+                } else {
+                    showProfileModal();
+                }
+            });
+            
+            closeModalButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    closeAllModals();
+                });
+            });
+            
+            // Tab switching
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.getAttribute('data-tab');
+                    switchTab(tabId);
+                });
+            });
+            
+            switchTabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.getAttribute('data-tab');
+                    switchTab(tabId);
+                });
+            });
+            
+            // Auth forms
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const username = document.getElementById('loginUsername').value;
+                const password = document.getElementById('loginPassword').value;
+                
+                // Simple validation
+                if (!username || !password) {
+                    alert('Please fill in all fields');
+                    return;
+                }
+                
+                // Simulate login
+                currentUser = {
+                    username: username,
+                    email: username.includes('@') ? username : `${username}@example.com`
+                };
+                
+                // Update UI
+                updateAuthUI();
+                closeAllModals();
+                
+                // Show success message
+                alert('Logged in successfully!');
+            });
+            
+            signupForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const username = document.getElementById('signupUsername').value;
+                const email = document.getElementById('signupEmail').value;
+                const password = document.getElementById('signupPassword').value;
+                
+                // Simple validation
+                if (!username || !email || !password) {
+                    alert('Please fill in all fields');
+                    return;
+                }
+                
+                // Simulate signup
+                currentUser = {
+                    username: username,
+                    email: email
+                };
+                
+                // Update UI
+                updateAuthUI();
+                closeAllModals();
+                
+                // Show success message
+                alert('Account created successfully!');
+            });
+            
+            // Upload form
+            selectVideoBtn.addEventListener('click', () => {
+                videoInput.click();
+            });
+            
+            videoInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const videoURL = URL.createObjectURL(file);
+                    previewVideo.src = videoURL;
+                    previewVideo.style.display = 'block';
+                    
+                    // Hide upload icon
+                    const uploadIcon = videoPreview.querySelector('.upload-icon');
+                    if (uploadIcon) uploadIcon.style.display = 'none';
+                    
+                    // Enable upload button
+                    uploadSubmitBtn.disabled = false;
+                    
+                    // Play video preview
+                    previewVideo.load();
+                    previewVideo.play();
+                }
+            });
+            
+            uploadForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const caption = document.getElementById('videoCaption').value;
+                const hashtags = document.getElementById('videoHashtags').value;
+                
+                // Create new video object
+                const newVideo = {
+                    id: Date.now(),
+                    username: currentUser.username,
+                    caption: caption,
+                    videoUrl: previewVideo.src,
+                    likes: "0",
+                    comments: "0",
+                    profilePic: "https://randomuser.me/api/portraits/women/12.jpg",
+                    sound: "Original Sound"
+                };
+                
+                // Add to user videos
+                userVideos.unshift(newVideo);
+                
+                // Reload videos
+                loadVideos();
+                
+                // Reset form
+                uploadForm.reset();
+                previewVideo.src = '';
+                previewVideo.style.display = 'none';
+                const uploadIcon = videoPreview.querySelector('.upload-icon');
+                if (uploadIcon) uploadIcon.style.display = 'block';
+                uploadSubmitBtn.disabled = true;
+                
+                // Close modal
+                closeAllModals();
+                
+                // Show success message
+                alert('Video uploaded successfully!');
+            });
+            
+            // Logout
+            logoutBtn.addEventListener('click', () => {
+                currentUser = null;
+                updateAuthUI();
+                closeAllModals();
+            });
+            
+            // Functions
+            function checkAuthStatus() {
+                // In a real app, you would check for auth token or session
+                // For demo, we'll just check if currentUser exists
+                updateAuthUI();
+            }
+            
+            function updateAuthUI() {
+                if (currentUser) {
+                    // Update profile info
+                    profileUsername.textContent = currentUser.username;
+                    profileEmail.textContent = currentUser.email;
+                    
+                    // Show empty state if no videos
+                    if (userVideos.length === 0) {
+                        emptyState.style.display = 'flex';
+                        videoFeed.style.display = 'none';
                     } else {
-                        entry.target.pause();
+                        emptyState.style.display = 'none';
+                        videoFeed.style.display = 'block';
+                    }
+                } else {
+                    // Show empty state with login prompt
+                    emptyState.innerHTML = `
+                        <i class="fas fa-user-lock text-4xl text-gray-600 mb-4"></i>
+                        <h2 class="text-xl font-bold mb-2">Welcome to ClipTok</h2>
+                        <p class="text-gray-400 mb-6">Log in or create an account to upload videos</p>
+                        <button id="loginPromptBtn" class="bg-gradient-to-r from-pink-500 to-purple-600 px-6 py-2 rounded-full font-semibold">
+                            Log In / Sign Up
+                        </button>
+                    `;
+                    emptyState.style.display = 'flex';
+                    videoFeed.style.display = 'none';
+                    
+                    // Add event listener to new button
+                    const loginPromptBtn = document.getElementById('loginPromptBtn');
+                    if (loginPromptBtn) {
+                        loginPromptBtn.addEventListener('click', showAuthModal);
+                    }
+                }
+            }
+            
+            function loadVideos() {
+                // Clear existing videos
+                videoFeed.innerHTML = '';
+                
+                // Combine sample videos with user videos
+                const allVideos = [...userVideos, ...sampleVideos];
+                
+                if (allVideos.length === 0) {
+                    emptyState.style.display = 'flex';
+                    videoFeed.style.display = 'none';
+                    return;
+                }
+                
+                emptyState.style.display = 'none';
+                videoFeed.style.display = 'block';
+                
+                // Create video elements
+                allVideos.forEach((video, index) => {
+                    const videoItem = document.createElement('div');
+                    videoItem.className = 'video-item relative';
+                    videoItem.innerHTML = `
+                        <div class="video-container">
+                            <video id="video${index}" loop playsinline>
+                                <source src="${video.videoUrl}" type="video/mp4">
+                            </video>
+                        </div>
+                        
+                        <!-- Video Info Overlay -->
+                        <div class="absolute bottom-20 left-4 right-4">
+                            <div class="mb-4">
+                                <h3 class="font-bold text-lg">${video.username}</h3>
+                                <p class="text-sm">${video.caption}</p>
+                            </div>
+                            
+                            <!-- Sound Info -->
+                            <div class="flex items-center mb-6">
+                                <div class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center mr-2">
+                                    <i class="fas fa-music text-xs"></i>
+                                </div>
+                                <span class="text-sm">${video.sound}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Side Action Buttons -->
+                        <div class="absolute right-4 bottom-32 flex flex-col items-center space-y-6">
+                            <!-- Profile -->
+                            <div class="flex flex-col items-center">
+                                <div class="w-12 h-12 rounded-full border-2 border-pink-500 overflow-hidden">
+                                    <img src="${video.profilePic}" alt="Profile" class="w-full h-full object-cover">
+                                </div>
+                                <div class="mt-2 w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center">
+                                    <i class="fas fa-plus text-xs"></i>
+                                </div>
+                            </div>
+                            
+                            <!-- Like Button -->
+                            <div class="flex flex-col items-center">
+                                <button id="likeBtn${index}" class="p-2 rounded-full hover:bg-gray-800 relative overflow-hidden">
+                                    <i class="far fa-heart text-2xl"></i>
+                                </button>
+                                <span id="likeCount${index}" class="text-xs">${video.likes}</span>
+                            </div>
+                            
+                            <!-- Comment Button -->
+                            <div class="flex flex-col items-center">
+                                <button id="commentBtn${index}" class="p-2 rounded-full hover:bg-gray-800">
+                                    <i class="far fa-comment text-2xl"></i>
+                                </button>
+                                <span class="text-xs">${video.comments}</span>
+                            </div>
+                            
+                            <!-- Share Button -->
+                            <div class="flex flex-col items-center">
+                                <button class="p-2 rounded-full hover:bg-gray-800">
+                                    <i class="fas fa-share text-2xl"></i>
+                                </button>
+                                <span class="text-xs">Share</span>
+                            </div>
+                            
+                            <!-- Music Disc -->
+                            <div class="w-10 h-10 rounded-full border border-gray-500 flex items-center justify-center animate-spin" style="animation-duration: 5s;">
+                                <div class="w-4 h-4 rounded-full bg-gray-500"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Progress Bar -->
+                        <div class="progress-bar absolute bottom-16 left-0 right-0"></div>
+                        
+                        <!-- Comment Section -->
+                        <div id="commentSection${index}" class="comment-section absolute bottom-0 left-0 right-0 bg-gray-900 p-4 rounded-t-2xl max-h-1/2 overflow-y-auto">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-bold">${video.comments} Comments</h3>
+                                <button class="p-2 rounded-full hover:bg-gray-800 close-comment">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="space-y-4 mb-4">
+                                <div class="flex space-x-2">
+                                    <img src="https://randomuser.me/api/portraits/women/12.jpg" alt="User" class="w-8 h-8 rounded-full">
+                                    <div>
+                                        <p class="font-semibold">@user123</p>
+                                        <p class="text-sm">This is awesome!</p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <img src="https://randomuser.me/api/portraits/men/22.jpg" alt="User" class="w-8 h-8 rounded-full">
+                                    <div>
+                                        <p class="font-semibold">@fan456</p>
+                                        <p class="text-sm">Love this content!</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2 sticky bottom-0 bg-gray-900 py-2">
+                                <input type="text" placeholder="Add a comment..." class="flex-1 bg-gray-800 rounded-full px-4 py-2 focus:outline-none">
+                                <button class="text-pink-500 font-semibold">Post</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    videoFeed.appendChild(videoItem);
+                    
+                    // Setup video playback
+                    const videoElement = document.getElementById(`video${index}`);
+                    if (index === 0) {
+                        // Play first video automatically
+                        videoElement.play();
+                    }
+                    
+                    // Setup like button
+                    const likeBtn = document.getElementById(`likeBtn${index}`);
+                    const likeCount = document.getElementById(`likeCount${index}`);
+                    
+                    likeBtn.addEventListener('click', function(e) {
+                        // Ripple effect
+                        const ripple = document.createElement('span');
+                        ripple.classList.add('ripple');
+                        this.appendChild(ripple);
+                        
+                        const rect = this.getBoundingClientRect();
+                        ripple.style.left = `${e.clientX - rect.left}px`;
+                        ripple.style.top = `${e.clientY - rect.top}px`;
+                        
+                        setTimeout(() => {
+                            ripple.remove();
+                        }, 600);
+                        
+                        // Like functionality
+                        const icon = this.querySelector('i');
+                        icon.classList.toggle('far');
+                        icon.classList.toggle('fas');
+                        icon.classList.toggle('liked');
+                        
+                        let count = parseInt(likeCount.textContent.replace('.', '').replace('K', '00'));
+                        if (icon.classList.contains('fas')) {
+                            count += 100;
+                        } else {
+                            count -= 100;
+                        }
+                        likeCount.textContent = (count / 1000).toFixed(1) + 'K';
+                    });
+                    
+                    // Setup comment button
+                    const commentBtn = document.getElementById(`commentBtn${index}`);
+                    const commentSection = document.getElementById(`commentSection${index}`);
+                    
+                    commentBtn.addEventListener('click', function() {
+                        // Close all other comment sections first
+                        document.querySelectorAll('.comment-section').forEach(s => {
+                            if (s.id !== `commentSection${index}`) s.classList.remove('open');
+                        });
+                        
+                        // Toggle current section
+                        commentSection.classList.toggle('open');
+                    });
+                    
+                    // Close comment button
+                    const closeCommentBtn = commentSection.querySelector('.close-comment');
+                    closeCommentBtn.addEventListener('click', function() {
+                        commentSection.classList.remove('open');
+                    });
+                    
+                    // Double tap to like
+                    videoElement.addEventListener('click', function(e) {
+                        let lastTap = this.lastTap || 0;
+                        const currentTime = new Date().getTime();
+                        const tapLength = currentTime - lastTap;
+                        
+                        if (tapLength < 300 && tapLength > 0) {
+                            // Double tap detected
+                            const icon = likeBtn.querySelector('i');
+                            
+                            // Only like if not already liked
+                            if (icon.classList.contains('far')) {
+                                icon.classList.remove('far');
+                                icon.classList.add('fas', 'liked');
+                                
+                                let count = parseInt(likeCount.textContent.replace('.', '').replace('K', '00'));
+                                count += 100;
+                                likeCount.textContent = (count / 1000).toFixed(1) + 'K';
+                                
+                                // Show heart animation
+                                const heart = document.createElement('div');
+                                heart.innerHTML = '<i class="fas fa-heart text-6xl text-pink-500 opacity-70"></i>';
+                                heart.style.position = 'absolute';
+                                heart.style.left = `${e.clientX - 24}px`;
+                                heart.style.top = `${e.clientY - 24}px`;
+                                heart.style.pointerEvents = 'none';
+                                heart.style.animation = 'likeAnimation 1s ease-out forwards';
+                                
+                                document.body.appendChild(heart);
+                                setTimeout(() => {
+                                    heart.remove();
+                                }, 1000);
+                            }
+                        }
+                        
+                        this.lastTap = currentTime;
+                    });
+                    
+                    // Progress bar
+                    const progressBar = videoItem.querySelector('.progress-bar');
+                    progressBar.style.setProperty('--width', '0%');
+                    
+                    videoElement.addEventListener('timeupdate', function() {
+                        const progress = (this.currentTime / this.duration) * 100;
+                        progressBar.style.setProperty('--width', `${progress}%`);
+                    });
+                });
+                
+                // Intersection Observer for video playback
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        const video = entry.target;
+                        if (entry.isIntersecting) {
+                            video.play();
+                        } else {
+                            video.pause();
+                        }
+                    });
+                }, { threshold: 0.7 });
+                
+                // Observe all videos
+                document.querySelectorAll('.video-item video').forEach(video => {
+                    observer.observe(video);
+                });
+                
+                // Touch events for swipe navigation
+                let startY;
+                videoFeed.addEventListener('touchstart', (e) => {
+                    startY = e.touches[0].clientY;
+                }, { passive: true });
+                
+                videoFeed.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                }, { passive: false });
+                
+                videoFeed.addEventListener('touchend', (e) => {
+                    const endY = e.changedTouches[0].clientY;
+                    const diff = startY - endY;
+                    
+                    if (Math.abs(diff) > 50) {
+                        const currentIndex = Math.round(videoFeed.scrollTop / window.innerHeight);
+                        let targetIndex;
+                        
+                        if (diff > 0) {
+                            // Swiped up - next video
+                            targetIndex = Math.min(currentIndex + 1, allVideos.length - 1);
+                        } else {
+                            // Swiped down - previous video
+                            targetIndex = Math.max(currentIndex - 1, 0);
+                        }
+                        
+                        videoFeed.scrollTo({
+                            top: targetIndex * window.innerHeight,
+                            behavior: 'smooth'
+                        });
+                    }
+                }, { passive: true });
+            }
+            
+            function showAuthModal() {
+                closeAllModals();
+                authModal.style.display = 'flex';
+            }
+            
+            function showUploadModal() {
+                closeAllModals();
+                uploadModal.style.display = 'flex';
+            }
+            
+            function showProfileModal() {
+                closeAllModals();
+                profileModal.style.display = 'flex';
+            }
+            
+            function closeAllModals() {
+                authModal.style.display = 'none';
+                uploadModal.style.display = 'none';
+                profileModal.style.display = 'none';
+            }
+            
+            function switchTab(tabId) {
+                // Hide all tab content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // Show selected tab content
+                document.getElementById(tabId).classList.add('active');
+                
+                // Update tab buttons
+                tabButtons.forEach(button => {
+                    if (button.getAttribute('data-tab') === tabId) {
+                        button.classList.add('active');
+                    } else {
+                        button.classList.remove('active');
                     }
                 });
-            }, { threshold: 0.7 });
-            
-            videos.forEach(video => observer.observe(video));
-            
-            // Like button functionality
-            document.getElementById('likeBtn1').addEventListener('click', function() {
-                const icon = this.querySelector('i');
-                icon.classList.toggle('far');
-                icon.classList.toggle('fas');
-                icon.classList.toggle('liked');
-                
-                const countElement = document.getElementById('likeCount1');
-                let count = parseInt(countElement.textContent.replace('.', '').replace('K', '00'));
-                if (icon.classList.contains('fas')) {
-                    count += 100;
-                } else {
-                    count -= 100;
-                }
-                countElement.textContent = (count / 1000).toFixed(1) + 'K';
-            });
-            
-            document.getElementById('likeBtn2').addEventListener('click', function() {
-                const icon = this.querySelector('i');
-                icon.classList.toggle('far');
-                icon.classList.toggle('fas');
-                icon.classList.toggle('liked');
-                
-                const countElement = document.getElementById('likeCount2');
-                let count = parseInt(countElement.textContent.replace('.', '').replace('K', '00'));
-                if (icon.classList.contains('fas')) {
-                    count += 100;
-                } else {
-                    count -= 100;
-                }
-                countElement.textContent = (count / 1000).toFixed(1) + 'K';
-            });
-            
-            // Simulate progress bar loading
-            document.querySelectorAll('.progress-bar').forEach(bar => {
-                bar.style.setProperty('--width', '0%');
-                setTimeout(() => {
-                    bar.style.setProperty('--width', '100%');
-                }, 100);
-            });
-            
-            // Swipe detection for mobile (simplified)
-            let startY;
-            document.addEventListener('touchstart', (e) => {
-                startY = e.touches[0].clientY;
-            }, false);
-            
-            document.addEventListener('touchend', (e) => {
-                const endY = e.changedTouches[0].clientY;
-                const diff = startY - endY;
-                
-                if (Math.abs(diff) > 50) { // Minimum swipe distance
-                    if (diff > 0) {
-                        // Swiped up
-                        window.scrollBy(0, window.innerHeight);
-                    } else {
-                        // Swiped down
-                        window.scrollBy(0, -window.innerHeight);
-                    }
-                }
-            }, false);
+            }
         });
     </script>
 </body>
